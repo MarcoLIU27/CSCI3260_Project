@@ -1,7 +1,7 @@
 /*
 Student Information
-Student ID: 1155141556
-Student Name: Liu Haoyu
+Student ID: 1155141556 1155141497
+Student Name: Liu Haoyu Yu zhihao
 */
 
 #include "Dependencies/glew/glew.h"
@@ -270,7 +270,7 @@ void sendDataToOpenGL() {
 
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, planetobj.indices.size() * sizeof(unsigned int), 
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, planetobj.indices.size() * sizeof(unsigned int),
         &planetobj.indices[0], GL_STATIC_DRAW);
 
     // 1st attribute buffer : position
@@ -400,6 +400,54 @@ void sendDataToOpenGL() {
     );
 
     crafttexture = loadTexture("resources/texture/vehicleTexture.bmp");
+    
+    // rock
+    rockobj = loadOBJ("resources/object/rock.obj");
+
+    glGenVertexArrays(1, &vao[3]);
+    glBindVertexArray(vao[3]);
+
+    glGenBuffers(1, &vboID);
+    glBindBuffer(GL_ARRAY_BUFFER, vboID);
+    glBufferData(GL_ARRAY_BUFFER, rockobj.vertices.size() * sizeof(Vertex),
+        &rockobj.vertices[0], GL_STATIC_DRAW);
+
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, rockobj.indices.size() * sizeof(unsigned int),
+        &rockobj.indices[0], GL_STATIC_DRAW);
+
+    // 1st attribute buffer : position
+    glBindBuffer(GL_ARRAY_BUFFER, vboID);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0, // attribute
+        3, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        sizeof(Vertex), // stride
+        (void*)offsetof(Vertex, position) // array buffer offset
+    );
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1, // attribute
+        2, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        sizeof(Vertex), // stride
+        (void*)offsetof(Vertex, uv) // array buffer offset
+    );
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(
+        2, // attribute
+        3, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        sizeof(Vertex), // stride
+        (void*)offsetof(Vertex, normal) // array buffer offset
+    );
+
+    rocktexture = loadTexture("resources/texture/rockTexture.bmp");
 }
 
 bool checkStatus(
@@ -619,6 +667,25 @@ void paintGL(void) {
 
     glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
         GL_UNSIGNED_INT, 0); 
+
+    //rock
+    glBindVertexArray(vao[3]);
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
+
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-20.0f, 0.0f, -20.0f));
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+
+    TextureID = glGetUniformLocation(programID, "ourTexture");
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, rocktexture);
+    glUniform1i(TextureID, slot);
+
+    glDrawElements(GL_TRIANGLES, rockobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
