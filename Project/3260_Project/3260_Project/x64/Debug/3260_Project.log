@@ -1,18 +1,22 @@
 ﻿  main.cpp
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(54,24): warning C4305: “初始化”: 从“double”到“float”截断
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(92,15): warning C4244: “参数”: 从“time_t”转换到“unsigned int”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(94,21): warning C4244: “参数”: 从“time_t”转换到“unsigned int”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(625,27): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(650,27): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(669,27): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(688,27): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(709,21): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(710,21): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(713,23): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(714,23): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(715,17): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(716,17): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(733,17): warning C4244: “-=”: 从“double”转换到“float”，可能丢失数据
-C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(96): warning C4172: 返回局部变量或临时变量的地址: num
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(55,24): warning C4305: “初始化”: 从“double”到“float”截断
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(93,22): warning C4244: “参数”: 从“double”转换到“unsigned int”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(112,23): warning C4244: “初始化”: 从“double”转换到“GLfloat”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(115,26): warning C4244: “初始化”: 从“int”转换到“GLfloat”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(126,15): warning C4244: “参数”: 从“time_t”转换到“unsigned int”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(128,22): warning C4244: “参数”: 从“time_t”转换到“unsigned int”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(580,24): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(662,27): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(687,27): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(705,27): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(724,79): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(747,21): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(748,21): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(751,23): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(752,23): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(753,17): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(754,17): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(771,17): warning C4244: “-=”: 从“double”转换到“float”，可能丢失数据
+C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\3260_Project\main.cpp(130): warning C4172: 返回局部变量或临时变量的地址: num
 LINK : warning LNK4098: 默认库“MSVCRT”与其他库的使用冲突；请使用 /NODEFAULTLIB:library
   3260_Project.vcxproj -> C:\Users\yuzhihao\Documents\GitHub\CSCI3260_Project\Project\3260_Project\x64\Debug\3260_Project.exe

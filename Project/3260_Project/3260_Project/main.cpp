@@ -24,6 +24,7 @@ Student Name: Liu Haoyu Yu zhihao
 
 #define STB_IMAGE_IMPLEMENTATION
 
+
 // screen setting
 const int SCR_WIDTH = 1200;
 const int SCR_HEIGHT = 900;
@@ -60,8 +61,6 @@ float lastY = 0.0f;
 float view_y = 0.0f;
 float intensity = 1.0f;
 
-
-
 // struct for storing the obj file
 struct Vertex {
     glm::vec3 position;
@@ -83,7 +82,42 @@ GLuint planettexture;
 GLuint spacecrafttexture;
 GLuint crafttexture;
 GLuint rocktexture;
+const int amount = 200;
+glm::mat4 modelMatrices[amount];
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
+void CreateRead_ModelM() {
+
+    // initial random seed
+    srand(glfwGetTime());
+    GLfloat radius = 6.0f;
+    GLfloat offset = 0.4f;
+    GLfloat displacement;
+    for (GLuint i = 0; i < amount; i++) {
+        glm::mat4 model;
+        // 1. Translation: Randomly displace along circle with radius in range [-offset,offset]
+        GLfloat angle = (GLfloat)i / (GLfloat)amount * 360.0f;
+        // x
+        displacement = (rand() % (GLint)(2 * offset * 200)) / 100.0f - offset;
+        GLfloat x = sin(angle) * radius + displacement;
+        // y
+        displacement = (rand() % (GLint)(2 * offset * 200)) / 100.0f - offset;
+        GLfloat y = displacement * 0.4f + 1;
+        // z
+        displacement = (rand() % (GLint)(2 * offset * 200)) / 100.0f - offset;
+        GLfloat z = cos(angle) * radius + displacement;
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
+        // 2. Scale: Scale between 0.05 and 0.25f
+        GLfloat scale = (rand() % 10) / 100.0f + 0.05;
+        model = glm::scale(model, glm::vec3(scale));
+        // 3. Rotation: add random rotation around a ( semi )randomly picked rotation axis vector
+        GLfloat rotAngle = (rand() % 360);
+        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+        // 4. Now add to list of matrices
+        modelMatrices[i] = model;
+    }
+}
 
 int* twoRandomNum()
 {
@@ -91,7 +125,7 @@ int* twoRandomNum()
     int num[2];
     srand(time(NULL));
     num[0] = rand() % 9 - 4;
-    srand(time(NULL)+1000);
+    srand(time(NULL) + 1000);
     num[1] = rand() % 9 - 4;
     return num;
 }
@@ -400,7 +434,7 @@ void sendDataToOpenGL() {
     );
 
     crafttexture = loadTexture("resources/texture/vehicleTexture.bmp");
-    
+
     // rock
     rockobj = loadOBJ("resources/object/rock.obj");
 
@@ -536,19 +570,22 @@ void initializedGL(void) {
     glEnable(GL_DEPTH_TEST);
     installShaders();
     sendDataToOpenGL();
-    
+
 }
 
 void paintGL(void) {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f); //specify the background color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDepthFunc(GL_LESS);
-
+    float currentFrame = glfwGetTime();
+    float deltaTime = currentFrame - lastFrame;
+    float lastFrame = currentFrame;
+    float timer = deltaTime * 150;
     // planet
     glBindVertexArray(vao[0]);
     glm::mat4 modelTransformMatrix = glm::mat4(1.0f);
-    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -15.0f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 2), glm::vec3(0.0f, 1.0f, 0.0f));
     GLint modelTransformMatrixUniformLocation =
         glGetUniformLocation(programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
@@ -652,9 +689,8 @@ void paintGL(void) {
     //craft
     glBindVertexArray(vao[2]);
     modelTransformMatrix = glm::mat4(1.0f);
-    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
-
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-10.0f, 0.0f, -30.0f));
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-30.0f, 0.0f, -30.0f));
     modelTransformMatrixUniformLocation =
         glGetUniformLocation(programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
@@ -666,26 +702,28 @@ void paintGL(void) {
     glUniform1i(TextureID, slot);
 
     glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
-        GL_UNSIGNED_INT, 0); 
-
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+   
+   
     //rock
-    glBindVertexArray(vao[3]);
-    modelTransformMatrix = glm::mat4(1.0f);
-    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
-
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-20.0f, 0.0f, -20.0f));
-    modelTransformMatrixUniformLocation =
-        glGetUniformLocation(programID, "modelTransformMatrix");
-    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
-        GL_FALSE, &modelTransformMatrix[0][0]);
-
+    
     TextureID = glGetUniformLocation(programID, "ourTexture");
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, rocktexture);
     glUniform1i(TextureID, slot);
+    glm::mat4 modelTransformMatrix1 = glm::mat4(1.0f);
+    modelTransformMatrix1 = glm::translate(modelTransformMatrix1, glm::vec3(0.0f, 0.0f, -40.0f));
+    modelTransformMatrix1 = glm::rotate(modelTransformMatrix1, glm::radians(currentFrame * 2), glm::vec3(0.0f, 1.0f, 0.0f));
+    for (GLuint i = 0; i < amount; i++) {
+       modelTransformMatrix = modelMatrices[i];
+       modelTransformMatrix = modelTransformMatrix1 * modelTransformMatrix;
+       modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
+       glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,GL_FALSE, &modelTransformMatrix[0][0]);
+       glBindVertexArray(vao[3]);
+       glDrawElements(GL_TRIANGLES, rockobj.indices.size(), GL_UNSIGNED_INT, 0);
+    }
 
-    glDrawElements(GL_TRIANGLES, rockobj.indices.size(),
-        GL_UNSIGNED_INT, 0);
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -774,7 +812,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             int ran_num_z = *(ran_num + 1);
             x_random = ran_num_x * x_delta;
             z_random = ran_num_z * z_delta;
-           
+
         } while (x_random == old_x_random && z_random == old_z_random);
     };
 
@@ -879,7 +917,7 @@ int main(int argc, char* argv[]) {
     }
     get_OpenGL_info();
     initializedGL();
-
+    CreateRead_ModelM();
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
