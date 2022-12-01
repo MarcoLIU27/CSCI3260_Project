@@ -1,7 +1,7 @@
 /*
 Student Information
-Student ID: 1155141556 1155141497
-Student Name: Liu Haoyu Yu zhihao
+Student ID: 1155141556 | 1155141497
+Student Name: Liu Haoyu | Yu Zhihao
 */
 
 #include "Dependencies/glew/glew.h"
@@ -21,16 +21,18 @@ Student Name: Liu Haoyu Yu zhihao
 #include <map>
 #include <Cstdlib>
 #include <Ctime>
+using namespace std;
 
 #define STB_IMAGE_IMPLEMENTATION
 
 
 // screen setting
-const int SCR_WIDTH = 1200;
-const int SCR_HEIGHT = 900;
+const int SCR_WIDTH = 1440;
+const int SCR_HEIGHT = 1080;
 
 GLuint programID;
-GLuint vao[4];
+GLuint Skybox_programID;
+GLuint vao[5];
 GLuint vboID;
 GLuint EBO;
 GLuint indexBufferID;
@@ -61,6 +63,11 @@ float lastY = 0.0f;
 float view_y = 0.0f;
 float intensity = 1.0f;
 
+const int amount = 200;
+glm::mat4 modelMatrices[amount];
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
 // struct for storing the obj file
 struct Vertex {
     glm::vec3 position;
@@ -82,10 +89,8 @@ GLuint planettexture;
 GLuint spacecrafttexture;
 GLuint crafttexture;
 GLuint rocktexture;
-const int amount = 200;
-glm::mat4 modelMatrices[amount];
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
+GLuint sky_cubemapTexture;
+
 
 void CreateRead_ModelM() {
 
@@ -290,6 +295,43 @@ GLuint loadTexture(const char* texturePath) {
     return textureID;
 }
 
+GLuint loadCubemap(std::vector<const GLchar*> faces)
+{
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glActiveTexture(GL_TEXTURE0);
+
+    int width, height, nrChannels;
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+    for (GLuint i = 0; i < faces.size(); i++)
+    {
+        unsigned char* data = stbi_load(faces[i], &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+            );
+            std::cout << "Cubemap texture loaded at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    std::cout << "Load cubemap successfully!" << std::endl;
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return textureID;
+}
+
 void sendDataToOpenGL() {
     // planet
     planetobj = loadOBJ("resources/object/planet.obj");
@@ -482,6 +524,80 @@ void sendDataToOpenGL() {
     );
 
     rocktexture = loadTexture("resources/texture/rockTexture.bmp");
+
+    //skybox
+    GLfloat skyboxVertices[] = {
+        // Positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+
+    glGenVertexArrays(1, &vao[4]);
+    glBindVertexArray(vao[4]);
+
+    glGenBuffers(1, &vboID);
+    glBindBuffer(GL_ARRAY_BUFFER, vboID);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices),
+        &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0, // attribute
+        3, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        3 * sizeof(GLfloat), // stride
+        (GLvoid*)0 // array buffer offset
+    );
+    glBindVertexArray(0);
+
+    vector<const GLchar*> faces;
+    faces.push_back("resources/skybox/right.bmp");
+    faces.push_back("resources/skybox/left.bmp");
+    faces.push_back("resources/skybox/bottom.bmp");
+    faces.push_back("resources/skybox/top.bmp");
+    faces.push_back("resources/skybox/back.bmp");
+    faces.push_back("resources/skybox/front.bmp");
+
+    sky_cubemapTexture = loadCubemap(faces);
 }
 
 bool checkStatus(
@@ -531,21 +647,32 @@ std::string readShaderCode(const char* fileName) {
 void installShaders() {
     GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+    GLuint skybox_vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    GLuint skybox_fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 
     const GLchar* adapter[1];
-    //adapter[0] = vertexShaderCode;
     std::string temp = readShaderCode("VertexShaderCode.glsl");
     adapter[0] = temp.c_str();
     glShaderSource(vertexShaderID, 1, adapter, 0);
-    //adapter[0] = fragmentShaderCode;
+    
     temp = readShaderCode("FragmentShaderCode.glsl");
     adapter[0] = temp.c_str();
     glShaderSource(fragmentShaderID, 1, adapter, 0);
 
+    temp = readShaderCode("SkyboxVertexShaderCode.glsl");
+    adapter[0] = temp.c_str();
+    glShaderSource(skybox_vertexShaderID, 1, adapter, 0);
+
+    temp = readShaderCode("SkyboxFragmentShaderCode.glsl");
+    adapter[0] = temp.c_str();
+    glShaderSource(skybox_fragmentShaderID, 1, adapter, 0);
+
     glCompileShader(vertexShaderID);
     glCompileShader(fragmentShaderID);
+    glCompileShader(skybox_vertexShaderID);
+    glCompileShader(skybox_fragmentShaderID);
 
-    if (!checkShaderStatus(vertexShaderID) || !checkShaderStatus(fragmentShaderID))
+    if (!checkShaderStatus(vertexShaderID) || !checkShaderStatus(fragmentShaderID) || !checkShaderStatus(skybox_vertexShaderID) || !checkShaderStatus(skybox_fragmentShaderID))
         return;
 
     programID = glCreateProgram();
@@ -556,8 +683,18 @@ void installShaders() {
     if (!checkProgramStatus(programID))
         return;
 
+    Skybox_programID = glCreateProgram();
+    glAttachShader(Skybox_programID, skybox_vertexShaderID);
+    glAttachShader(Skybox_programID, skybox_fragmentShaderID);
+    glLinkProgram(Skybox_programID);
+
+    if (!checkProgramStatus(Skybox_programID))
+        return;
+
     glDeleteShader(vertexShaderID);
     glDeleteShader(fragmentShaderID);
+    glDeleteShader(skybox_vertexShaderID);
+    glDeleteShader(skybox_fragmentShaderID);
 
     glUseProgram(programID);
 
@@ -574,27 +711,85 @@ void initializedGL(void) {
 }
 
 void paintGL(void) {
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f); //specify the background color
+    glClearColor(0.1f, 0.2f, 0.1f, 0.0f); //specify the background color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDepthFunc(GL_LESS);
     float currentFrame = glfwGetTime();
     float deltaTime = currentFrame - lastFrame;
     float lastFrame = currentFrame;
     float timer = deltaTime * 150;
+    glm::mat4 modelTransformMatrix;
+    glm::mat4 viewMatrix;
+    glm::mat4 projectionMatrix;
+    GLint modelTransformMatrixUniformLocation;
+    GLint projectionMatrixUniformLocation;
+    GLint viewMatrixUniformLocation;
+    unsigned int slot = 0;
+    GLuint TextureID;
+
+
+
+    //skybox
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDepthFunc(GL_LEQUAL);
+    glUseProgram(Skybox_programID);
+
+    modelTransformMatrix = glm::mat4(1.0f);
+    ////Skb_modelTransformMatrix = glm::scale(Skb_modelTransformMatrix, glm::vec3(5.0f, 5.0f, 5.0f));
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(Skybox_programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+
+    //remove any translation component of the view matrix
+    viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 30.0f + zoom),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f));
+    viewMatrix = glm::rotate(viewMatrix,
+        glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    viewMatrix = glm::rotate(viewMatrix,
+        glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+    viewMatrix = glm::rotate(viewMatrix,
+        glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+    viewMatrix = glm::mat4(glm::mat3(viewMatrix));
+    viewMatrixUniformLocation =
+        glGetUniformLocation(Skybox_programID, "viewMatrix");
+    glUniformMatrix4fv(viewMatrixUniformLocation, 1,
+        GL_FALSE, &viewMatrix[0][0]);
+
+    projectionMatrix = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    projectionMatrixUniformLocation =
+        glGetUniformLocation(Skybox_programID, "projectionMatrix");
+    glUniformMatrix4fv(projectionMatrixUniformLocation, 1,
+        GL_FALSE, &projectionMatrix[0][0]);
+
+    //skybox cube
+    glBindVertexArray(vao[4]);
+    TextureID = glGetUniformLocation(Skybox_programID, "skybox");
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glUniform1i(TextureID, slot);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, sky_cubemapTexture);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS);
+
+    glUseProgram(programID);
+
     // planet
     glBindVertexArray(vao[0]);
-    glm::mat4 modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::mat4(1.0f);
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
     modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 2), glm::vec3(0.0f, 1.0f, 0.0f));
-    GLint modelTransformMatrixUniformLocation =
+    modelTransformMatrixUniformLocation =
         glGetUniformLocation(programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
         GL_FALSE, &modelTransformMatrix[0][0]);
 
-    glm::mat4 viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 30.0f + zoom),
+
+    viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 30.0f + zoom),
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, 1.0f, 0.0f));
-
     viewMatrix = glm::rotate(viewMatrix,
         glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     viewMatrix = glm::rotate(viewMatrix,
@@ -602,19 +797,18 @@ void paintGL(void) {
     viewMatrix = glm::rotate(viewMatrix,
         glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
     viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, view_y, 0.0f));
-    GLint viewMatrixUniformLocation =
+    viewMatrixUniformLocation =
         glGetUniformLocation(programID, "viewMatrix");
     glUniformMatrix4fv(viewMatrixUniformLocation, 1,
         GL_FALSE, &viewMatrix[0][0]);
 
-    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f, 1.0f, 100.0f);
-    GLint projectionMatrixUniformLocation =
+    projectionMatrix = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
+    projectionMatrixUniformLocation =
         glGetUniformLocation(programID, "projectionMatrix");
     glUniformMatrix4fv(projectionMatrixUniformLocation, 1,
         GL_FALSE, &projectionMatrix[0][0]);
 
-    unsigned int slot = 0;
-    GLuint TextureID = glGetUniformLocation(programID, "ourTexture");
+    TextureID = glGetUniformLocation(programID, "ourTexture");
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, planettexture);
 
@@ -638,7 +832,7 @@ void paintGL(void) {
     glUniform3fv(dirSpecularUniformLocation, 1, &dirSpecular[0]);
 
     GLint eyePositionUniformLocation = glGetUniformLocation(programID, "eyePositionWorld");
-    glm::vec3 eyePosition(0.0f, 0.0f, 20.0f + zoom);
+    glm::vec3 eyePosition(0.0f, 0.0f, 30.0f + zoom);
     glUniform3fv(eyePositionUniformLocation, 1, &eyePosition[0]);
 
     //// point light
@@ -704,10 +898,10 @@ void paintGL(void) {
     glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
         GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-   
-   
+
+
     //rock
-    
+
     TextureID = glGetUniformLocation(programID, "ourTexture");
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, rocktexture);
@@ -716,13 +910,16 @@ void paintGL(void) {
     modelTransformMatrix1 = glm::translate(modelTransformMatrix1, glm::vec3(0.0f, 0.0f, -40.0f));
     modelTransformMatrix1 = glm::rotate(modelTransformMatrix1, glm::radians(currentFrame * 2), glm::vec3(0.0f, 1.0f, 0.0f));
     for (GLuint i = 0; i < amount; i++) {
-       modelTransformMatrix = modelMatrices[i];
-       modelTransformMatrix = modelTransformMatrix1 * modelTransformMatrix;
-       modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
-       glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,GL_FALSE, &modelTransformMatrix[0][0]);
-       glBindVertexArray(vao[3]);
-       glDrawElements(GL_TRIANGLES, rockobj.indices.size(), GL_UNSIGNED_INT, 0);
+        modelTransformMatrix = modelMatrices[i];
+        modelTransformMatrix = modelTransformMatrix1 * modelTransformMatrix;
+        modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
+        glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1, GL_FALSE, &modelTransformMatrix[0][0]);
+        glBindVertexArray(vao[3]);
+        glDrawElements(GL_TRIANGLES, rockobj.indices.size(), GL_UNSIGNED_INT, 0);
     }
+    glBindVertexArray(0);
+
+    
 
 }
 
