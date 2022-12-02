@@ -63,6 +63,8 @@ float lastX = 0.0f;
 float lastY = 0.0f;
 float view_y = 0.0f;
 float intensity = 1.0f;
+float p_intensity = 1.0f;
+bool point_light_switch = false;
 
 const int amount = 200;
 glm::mat4 modelMatrices[amount];
@@ -791,12 +793,10 @@ void paintGL(void) {
 
 
     //skybox
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDepthFunc(GL_LEQUAL);
     glUseProgram(Skybox_programID);
 
     modelTransformMatrix = glm::mat4(1.0f);
-    ////Skb_modelTransformMatrix = glm::scale(Skb_modelTransformMatrix, glm::vec3(5.0f, 5.0f, 5.0f));
     modelTransformMatrixUniformLocation =
         glGetUniformLocation(Skybox_programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
@@ -901,22 +901,38 @@ void paintGL(void) {
     glm::vec3 eyePosition(0.0f, 0.0f, 30.0f + zoom);
     glUniform3fv(eyePositionUniformLocation, 1, &eyePosition[0]);
 
-    //// point light
-    //GLint pointAmbientUniformLocation = glGetUniformLocation(programID, "pointLight.ambient");
-    //glm::vec3 pointAmbient(1.0f, 1.0f, 1.0f);
-    //glUniform4fv(pointAmbientUniformLocation, 1, &pointAmbient[0]);
+    // point light
+    if (point_light_switch == true) {
+        GLint pointAmbientUniformLocation = glGetUniformLocation(programID, "pointLight.ambient");
+        glm::vec3 pointAmbient(0.5f, 0.5f, 0.5f);
+        glUniform4fv(pointAmbientUniformLocation, 1, &pointAmbient[0]);
 
-    //GLint pointPositionUniformLocation = glGetUniformLocation(programID, "pointLight.position");
-    //glm::vec3 pointPosition(0.0f, 5.0f, 0.0f);
-    //glUniform4fv(pointPositionUniformLocation, 1, &pointPosition[0]);
+        GLint pointPositionUniformLocation = glGetUniformLocation(programID, "pointLight.position");
+        glm::vec3 pointPosition(0.0f, 20.0f, 30.0f);
+        glUniform4fv(pointPositionUniformLocation, 1, &pointPosition[0]);
 
-    //GLint pointDiffuseUniformLocation = glGetUniformLocation(programID, "pointLight.diffuse");
-    //glm::vec3 pointDiffuse(0.8f, 0.8f, 0.8f);
-    //glUniform3fv(pointDiffuseUniformLocation, 1, &pointDiffuse[0]);
+        GLint pointDiffuseUniformLocation = glGetUniformLocation(programID, "pointLight.diffuse");
+        glm::vec3 pointDiffuse(0.8f, 0.8f, 0.8f);
+        glUniform3fv(pointDiffuseUniformLocation, 1, &pointDiffuse[0]);
 
-    //GLint pointSpecularUniformLocation = glGetUniformLocation(programID, "pointLight.specular");
-    //glm::vec3 pointSpecular(0.8f, 0.8f, 0.8f);
-    //glUniform3fv(pointSpecularUniformLocation, 1, &pointSpecular[0]);
+        GLint pointSpecularUniformLocation = glGetUniformLocation(programID, "pointLight.specular");
+        glm::vec3 pointSpecular(0.8f, 0.8f, 0.8f);
+        glUniform3fv(pointSpecularUniformLocation, 1, &pointSpecular[0]);
+    }
+    else {
+        GLint pointAmbientUniformLocation = glGetUniformLocation(programID, "pointLight.ambient");
+        glUniform4fv(pointAmbientUniformLocation, 1, 0);
+
+        GLint pointPositionUniformLocation = glGetUniformLocation(programID, "pointLight.position");
+        glUniform4fv(pointPositionUniformLocation, 1, 0);
+
+        GLint pointDiffuseUniformLocation = glGetUniformLocation(programID, "pointLight.diffuse");
+        glUniform3fv(pointDiffuseUniformLocation, 1, 0);
+
+        GLint pointSpecularUniformLocation = glGetUniformLocation(programID, "pointLight.specular");    
+        glUniform3fv(pointSpecularUniformLocation, 1, 0);
+    }
+
     glDrawElements(GL_TRIANGLES, planetobj.indices.size(),
         GL_UNSIGNED_INT, 0);
 
@@ -1194,10 +1210,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         x_press_num += 25;
     }
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
-        rotate_num += 1;
+        rotate_num -= 1;
     }
     if (key == GLFW_KEY_Z && action == GLFW_PRESS) {
-        rotate_num -= 1;
+        rotate_num += 1;
     }
     if (key == GLFW_KEY_W && action == GLFW_PRESS) {
         if (intensity <= 5.0f) {
@@ -1207,6 +1223,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_S && action == GLFW_PRESS) {
         if (intensity >= 0.0f) {
             intensity -= 0.5f;
+        }
+    }
+
+    if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+        if (point_light_switch == true) {
+            point_light_switch = false;
+        }
+        else {
+            point_light_switch = true;
         }
     }
 
@@ -1270,7 +1295,7 @@ int main(int argc, char* argv[]) {
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Assignment 2 - LIU Haoyu", NULL, NULL);
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Project", NULL, NULL);
     if (!window) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
