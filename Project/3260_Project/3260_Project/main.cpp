@@ -30,20 +30,21 @@ const int SCR_WIDTH = 1200;
 const int SCR_HEIGHT = 900;
 
 GLuint programID;
-GLuint vao[4];
+GLuint vao[10];
 GLuint vboID;
 GLuint EBO;
 GLuint indexBufferID;
 
-float z_delta = 0.0f;
-float x_delta = 0.0f;
-float y_delta = 0.3f;
+float z_delta = 1.0f;
+float x_delta = 1.0f;
+float y_delta = 1.0f;
 float z_current = 0.0f;
+float y_current = 0.0f;
 float x_current = 0.0f;
 float z_random = 0.0f;
 float x_random = 0.0f;
-float r_delta = glm::radians(45.0f);
-float delta = 0.2f;
+float r_delta = glm::radians(15.0f);
+float delta = 1.0f;
 int z_press_num = 0;
 int x_press_num = 0;
 int y_press_num = 0;
@@ -77,15 +78,18 @@ Model planetobj;
 Model spacecraftobj;
 Model craftobj;
 Model rockobj;
-
+Model alienobj;
 GLuint planettexture;
 GLuint spacecrafttexture;
 GLuint crafttexture;
+GLuint crafttexture1;
 GLuint rocktexture;
+GLuint alientexture;
 const int amount = 200;
 glm::mat4 modelMatrices[amount];
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
 
 void CreateRead_ModelM() {
 
@@ -117,6 +121,14 @@ void CreateRead_ModelM() {
         // 4. Now add to list of matrices
         modelMatrices[i] = model;
     }
+}
+
+
+bool CollisionDetection(glm::vec4 vectorA, glm::vec4 vectorB, int dis) {
+    if (glm::distance(vectorA, vectorB) <= dis)
+        return true;
+    else
+        return false;
 }
 
 int* twoRandomNum()
@@ -434,7 +446,7 @@ void sendDataToOpenGL() {
     );
 
     crafttexture = loadTexture("resources/texture/vehicleTexture.bmp");
-
+    crafttexture1= loadTexture("resources/texture/vehicleTexture2.bmp");
     // rock
     rockobj = loadOBJ("resources/object/rock.obj");
 
@@ -482,6 +494,53 @@ void sendDataToOpenGL() {
     );
 
     rocktexture = loadTexture("resources/texture/rockTexture.bmp");
+    // alien
+    alienobj = loadOBJ("resources/object/alien.obj");
+
+    glGenVertexArrays(1, &vao[4]);
+    glBindVertexArray(vao[4]);
+
+    glGenBuffers(1, &vboID);
+    glBindBuffer(GL_ARRAY_BUFFER, vboID);
+    glBufferData(GL_ARRAY_BUFFER, alienobj.vertices.size() * sizeof(Vertex),
+        &alienobj.vertices[0], GL_STATIC_DRAW);
+
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, alienobj.indices.size() * sizeof(unsigned int),
+        &alienobj.indices[0], GL_STATIC_DRAW);
+
+    // 1st attribute buffer : position
+    glBindBuffer(GL_ARRAY_BUFFER, vboID);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0, // attribute
+        3, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        sizeof(Vertex), // stride
+        (void*)offsetof(Vertex, position) // array buffer offset
+    );
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1, // attribute
+        2, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        sizeof(Vertex), // stride
+        (void*)offsetof(Vertex, uv) // array buffer offset
+    );
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(
+        2, // attribute
+        3, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        sizeof(Vertex), // stride
+        (void*)offsetof(Vertex, normal) // array buffer offset
+    );
+
+    alientexture = loadTexture("resources/texture/alienTexture.bmp");
 }
 
 bool checkStatus(
@@ -585,7 +644,7 @@ void paintGL(void) {
     glBindVertexArray(vao[0]);
     glm::mat4 modelTransformMatrix = glm::mat4(1.0f);
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
-    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 2), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 4), glm::vec3(0.0f, 1.0f, 0.0f));
     GLint modelTransformMatrixUniformLocation =
         glGetUniformLocation(programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
@@ -664,16 +723,16 @@ void paintGL(void) {
     // spacecraft
     glBindVertexArray(vao[1]);
     modelTransformMatrix = glm::mat4(1.0f);
-    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.1f, 0.1f, 0.1f));
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.05f, 0.05f, 0.05f));
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, 40.0f));
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_current + x_press_num * x_delta * delta, 0.0f, 0.0f));
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_current + z_press_num * z_delta * delta));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, y_press_num * y_delta, 0.0f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f,y_current+ y_press_num * y_delta, 0.0f));
     //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_random, 0.0f, 0.0f));
     //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_random));
     //modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    //modelTransformMatrix = glm::rotate(modelTransformMatrix, rotate_num * r_delta, glm::vec3(0.0f, 1.0f, 0.0f));
-
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, rotate_num * r_delta, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 spacecraft = modelTransformMatrix;
     modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1, GL_FALSE, &modelTransformMatrix[0][0]);
 
@@ -686,26 +745,142 @@ void paintGL(void) {
     glDrawElements(GL_TRIANGLES, spacecraftobj.indices.size(),
         GL_UNSIGNED_INT, 0);
 
-    //craft
+    //craft1
     glBindVertexArray(vao[2]);
+    
     modelTransformMatrix = glm::mat4(1.0f);
     modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-30.0f, 0.0f, -30.0f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-40.0f, 0.0f, -200.0f+ currentFrame * 10));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 craft1 = modelTransformMatrix;
     modelTransformMatrixUniformLocation =
         glGetUniformLocation(programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
         GL_FALSE, &modelTransformMatrix[0][0]);
-
-    TextureID = glGetUniformLocation(programID, "ourTexture");
-    glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(GL_TEXTURE_2D, crafttexture);
-    glUniform1i(TextureID, slot);
+    if (CollisionDetection(craft1 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+    
 
     glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
         GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-   
-   
+    //craft2
+    glBindVertexArray(vao[2]);
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(50.0f, 0.0f, -200.0f + currentFrame * 10));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 craft2 = modelTransformMatrix;
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    if (CollisionDetection(craft2 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    //craft3
+    glBindVertexArray(vao[2]);
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(15.0f, -20.0f, -200.0f + currentFrame * 10));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 craft3 = modelTransformMatrix;
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    if (CollisionDetection(craft3 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    //craft4
+    glBindVertexArray(vao[2]);
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-25.0f, 20.0f, -200.0f + currentFrame * 10));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 craft4 = modelTransformMatrix;
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    if (CollisionDetection(craft4 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    //craft5
+    glBindVertexArray(vao[2]);
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, -60.0f, -50));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    if (CollisionDetection(craft3 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+
+
+    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+    
     //rock
     
     TextureID = glGetUniformLocation(programID, "ourTexture");
@@ -723,6 +898,22 @@ void paintGL(void) {
        glBindVertexArray(vao[3]);
        glDrawElements(GL_TRIANGLES, rockobj.indices.size(), GL_UNSIGNED_INT, 0);
     }
+    //alien
+    glBindVertexArray(vao[4]);
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.25f, -11.0f, -10.0f));
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    TextureID = glGetUniformLocation(programID, "ourTexture");
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, alientexture);
+    glUniform1i(TextureID, slot);
+    glDrawElements(GL_TRIANGLES, alienobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 
 }
 
@@ -778,34 +969,14 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     // Sets the Keyboard callback for the current window.
-    if (key == GLFW_KEY_1 && action == GLFW_PRESS)
-    {
-        theme_tiger = 1;
-    }
-    if (key == GLFW_KEY_2 && action == GLFW_PRESS)
-    {
-        theme_tiger = 2;
-    }
-    if (key == GLFW_KEY_3 && action == GLFW_PRESS)
-    {
-        theme_ground = 1;
-    }
-    if (key == GLFW_KEY_4 && action == GLFW_PRESS)
-    {
-        theme_ground = 2;
-    }
-
-
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
     if (key == GLFW_KEY_L && action == GLFW_PRESS) {
         int* ran_num;
         float old_x_random = x_random;
         float old_z_random = z_random;
         x_delta = 0.25f;
         z_delta = 0.25f;
-
         do {
             ran_num = twoRandomNum(); // between -4 and 4
             int ran_num_x = *ran_num;
@@ -817,10 +988,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     };
 
     if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
-        y_press_num += 1;
+        z_press_num -= 25;
     }
     if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
-        y_press_num -= 1;
+        z_press_num += 25;
+    }
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+        x_press_num -= 25;
+    }
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+        x_press_num += 25;
+    }
+    if (key == GLFW_KEY_X && action == GLFW_PRESS) {
+        rotate_num += 1;
+    }
+    if (key == GLFW_KEY_Z && action == GLFW_PRESS) {
+        rotate_num -= 1;
     }
     if (key == GLFW_KEY_W && action == GLFW_PRESS) {
         if (intensity <= 5.0f) {
@@ -849,12 +1032,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         z_press_num = -1;
         z_delta = sin(rotate_num * r_delta) * 2.0f;
     }
-    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
-        rotate_num += 1;
-    }
-    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
-        rotate_num -= 1;
-    }
+    
+    //if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+      //  rotate_num -= 1;
+    //}
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         if (view_y <= 8.0f) {
             view_y += 1.0f;
