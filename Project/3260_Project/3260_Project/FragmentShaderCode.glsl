@@ -8,6 +8,7 @@ in vec3 normalWorld;
 in vec3 vertexPositionWorld;
 
 uniform sampler2D ourTexture;
+uniform sampler2D ourTexture_1;
 
 uniform vec4 ambientLight;
 uniform vec3 lightPositionWorld;
@@ -78,6 +79,8 @@ void main()
 {
     vec3 norm = normalize(normalWorld);
     vec3 eyeVectorWorld  = normalize(eyePositionWorld  - vertexPositionWorld);
+    norm = texture(ourTexture_1, UV).rgb;
+    norm = normalize(norm * 2.0 - 1.0);
 
     vec3 result = vec3(texture(ourTexture, UV)) * 0.2f;
     // phase 1: Directional lighting

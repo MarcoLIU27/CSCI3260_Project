@@ -85,7 +85,7 @@ Model spacecraftobj;
 Model craftobj;
 Model rockobj;
 
-GLuint planettexture;
+GLuint planettexture[2];
 GLuint spacecrafttexture;
 GLuint crafttexture;
 GLuint rocktexture;
@@ -379,7 +379,8 @@ void sendDataToOpenGL() {
         (void*)offsetof(Vertex, normal) // array buffer offset
     );
 
-    planettexture = loadTexture("resources/texture/earthTexture.bmp");
+    planettexture[0] = loadTexture("resources/texture/earthTexture.bmp");
+    planettexture[1] = loadTexture("resources/texture/earthNormal.bmp");
 
     // spacecraft
     spacecraftobj = loadOBJ("resources/object/spacecraft1.obj");
@@ -726,6 +727,7 @@ void paintGL(void) {
     GLint viewMatrixUniformLocation;
     unsigned int slot = 0;
     GLuint TextureID;
+    GLuint TextureID_1;
 
 
 
@@ -809,10 +811,15 @@ void paintGL(void) {
         GL_FALSE, &projectionMatrix[0][0]);
 
     TextureID = glGetUniformLocation(programID, "ourTexture");
-    glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(GL_TEXTURE_2D, planettexture);
+    TextureID_1 = glGetUniformLocation(programID, "ourTexture_1");
 
-    glUniform1i(TextureID, slot);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, planettexture[0]);
+    glUniform1i(TextureID, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, planettexture[1]);
+    glUniform1i(TextureID_1, 1);
 
     // directional light
     GLint dirAmbientUniformLocation = glGetUniformLocation(programID, "dirLight.ambient");
@@ -851,7 +858,6 @@ void paintGL(void) {
     //GLint pointSpecularUniformLocation = glGetUniformLocation(programID, "pointLight.specular");
     //glm::vec3 pointSpecular(0.8f, 0.8f, 0.8f);
     //glUniform3fv(pointSpecularUniformLocation, 1, &pointSpecular[0]);
-
     glDrawElements(GL_TRIANGLES, planetobj.indices.size(),
         GL_UNSIGNED_INT, 0);
 
@@ -884,19 +890,22 @@ void paintGL(void) {
     glBindVertexArray(vao[2]);
     modelTransformMatrix = glm::mat4(1.0f);
     modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-30.0f, 0.0f, -30.0f));
-    modelTransformMatrixUniformLocation =
-        glGetUniformLocation(programID, "modelTransformMatrix");
-    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
-        GL_FALSE, &modelTransformMatrix[0][0]);
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -30.0f));
+    glm::vec3 positions[] = {
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, -40.0f),
+    };
 
-    TextureID = glGetUniformLocation(programID, "ourTexture");
-    glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(GL_TEXTURE_2D, crafttexture);
-    glUniform1i(TextureID, slot);
-
-    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
-        GL_UNSIGNED_INT, 0);
+    for (GLuint i = 0; i < 2; i++) {
+        modelTransformMatrix = glm::translate(modelTransformMatrix, positions[i]);
+        modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
+        glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1, GL_FALSE, &modelTransformMatrix[0][0]);
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+        glDrawElements(GL_TRIANGLES, craftobj.indices.size(), GL_UNSIGNED_INT, 0);
+    }
     glBindVertexArray(0);
 
 
