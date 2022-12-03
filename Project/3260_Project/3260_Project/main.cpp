@@ -45,7 +45,7 @@ float y_current = 0.0f;
 float x_current = 0.0f;
 float z_random = 0.0f;
 float x_random = 0.0f;
-float r_delta = glm::radians(15.0f);
+float r_delta = glm::radians(10.0f);
 float delta = 1.0f;
 int z_press_num = 0;
 int x_press_num = 0;
@@ -63,12 +63,11 @@ float lastX = 0.0f;
 float lastY = 0.0f;
 float view_y = 0.0f;
 float intensity = 1.0f;
-
 const int amount = 200;
 glm::mat4 modelMatrices[amount];
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-
+int speed = 10;
 // struct for storing the obj file
 struct Vertex {
     glm::vec3 position;
@@ -86,6 +85,7 @@ Model spacecraftobj;
 Model craftobj;
 Model rockobj;
 Model alienobj;
+Model satelliteobj;
 GLuint planettexture[2];
 GLuint spacecrafttexture;
 GLuint crafttexture;
@@ -93,6 +93,7 @@ GLuint crafttexture1;
 GLuint rocktexture;
 GLuint alientexture;
 GLuint sky_cubemapTexture;
+GLuint satellitetexture;
 
 
 
@@ -658,6 +659,51 @@ void sendDataToOpenGL() {
         (void*)offsetof(Vertex, normal) // array buffer offset
     );
     alientexture = loadTexture("resources/texture/alienTexture.bmp");
+    //satellite
+    satelliteobj = loadOBJ("resources/object/satellite.obj");
+    glGenVertexArrays(1, &vao[6]);
+    glBindVertexArray(vao[6]);
+
+    glGenBuffers(1, &vboID);
+    glBindBuffer(GL_ARRAY_BUFFER, vboID);
+    glBufferData(GL_ARRAY_BUFFER, satelliteobj.vertices.size() * sizeof(Vertex),
+        &satelliteobj.vertices[0], GL_STATIC_DRAW);
+
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, satelliteobj.indices.size() * sizeof(unsigned int),
+        &satelliteobj.indices[0], GL_STATIC_DRAW);
+
+    // 1st attribute buffer : position
+    glBindBuffer(GL_ARRAY_BUFFER, vboID);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0, // attribute
+        3, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        sizeof(Vertex), // stride
+        (void*)offsetof(Vertex, position) // array buffer offset
+    );
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1, // attribute
+        2, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        sizeof(Vertex), // stride
+        (void*)offsetof(Vertex, uv) // array buffer offset
+    );
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(
+        2, // attribute
+        3, // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        sizeof(Vertex), // stride
+        (void*)offsetof(Vertex, normal) // array buffer offset
+    );
+    satellitetexture = loadTexture("resources/texture/satellite.jpg");
 }
 
 bool checkStatus(
@@ -779,6 +825,7 @@ void paintGL(void) {
     lastFrame = currentFrame;
     float timer = deltaTime * 150;
     glm::mat4 modelTransformMatrix;
+    glm::mat4 cameraMatrix;
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
     GLint modelTransformMatrixUniformLocation;
@@ -813,6 +860,7 @@ void paintGL(void) {
     viewMatrix = glm::rotate(viewMatrix,
         glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
     viewMatrix = glm::mat4(glm::mat3(viewMatrix));
+    viewMatrix = viewMatrix * cameraMatrix;
     viewMatrixUniformLocation =
         glGetUniformLocation(Skybox_programID, "viewMatrix");
     glUniformMatrix4fv(viewMatrixUniformLocation, 1,
@@ -840,8 +888,9 @@ void paintGL(void) {
     // planet
     glBindVertexArray(vao[0]);
     modelTransformMatrix = glm::mat4(1.0f);
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -55.0f));
     modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 4), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(1.5f, 1.5f, 1.5f));
     modelTransformMatrixUniformLocation =
         glGetUniformLocation(programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
@@ -933,6 +982,7 @@ void paintGL(void) {
     //modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     modelTransformMatrix = glm::rotate(modelTransformMatrix, rotate_num * r_delta, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 spacecraft = modelTransformMatrix;
+    cameraMatrix= modelTransformMatrix;
     modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1, GL_FALSE, &modelTransformMatrix[0][0]);
 
@@ -947,9 +997,23 @@ void paintGL(void) {
 
     //craft1
     glBindVertexArray(vao[2]);
+    float current_position1 = -400 + speed * currentFrame;
+    if (current_position1 >= 10) {
+        current_position1 -= 400;
+    }
+    if (currentFrame >= 30) {
+        currentFrame = glfwGetTime() - 30;
+    }
+    if (currentFrame >= 60) {
+        currentFrame = glfwGetTime() - 60;
+    }
+    if (currentFrame >= 90) {
+        currentFrame = glfwGetTime() - 90;
+    }
+   
     modelTransformMatrix = glm::mat4(1.0f);
     modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-40.0f, 0.0f, -200.0f + currentFrame * 10));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-40.0f, 0.0f, current_position1));
     modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 craft1 = modelTransformMatrix;
     modelTransformMatrixUniformLocation =
@@ -973,9 +1037,13 @@ void paintGL(void) {
     glBindVertexArray(0);
     //craft2
         glBindVertexArray(vao[2]);
+        float current_position2 = -450 + speed * currentFrame;
+        if (current_position2 >= 10) {
+            current_position2 -= 450;
+        }
         modelTransformMatrix = glm::mat4(1.0f);
         modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(50.0f, 0.0f, -200.0f + currentFrame * 10));
+        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(50.0f, 0.0f, current_position2));
         modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 craft2 = modelTransformMatrix;
         modelTransformMatrixUniformLocation =
@@ -999,9 +1067,13 @@ void paintGL(void) {
         glBindVertexArray(0);
         //craft3
         glBindVertexArray(vao[2]);
+        float current_position3= -400 + speed* currentFrame;
+        if (current_position3 >= 10) {
+            current_position3 -= 400;
+        }
         modelTransformMatrix = glm::mat4(1.0f);
         modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(15.0f, -20.0f, -200.0f + currentFrame * 10));
+        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(70.0f, 0.0f, current_position3));
         modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 craft3 = modelTransformMatrix;
         modelTransformMatrixUniformLocation =
@@ -1025,9 +1097,13 @@ void paintGL(void) {
         glBindVertexArray(0);
         //craft4
         glBindVertexArray(vao[2]);
+        float current_position4 = -350 + speed* currentFrame;
+        if (current_position4 >= 10) {
+            current_position4 -= 350;
+        }
         modelTransformMatrix = glm::mat4(1.0f);
         modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-25.0f, 20.0f, -200.0f + currentFrame * 10));
+        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-80.0f, 0.0f, current_position4));
         modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 craft4 = modelTransformMatrix;
         modelTransformMatrixUniformLocation =
@@ -1049,16 +1125,22 @@ void paintGL(void) {
         glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
             GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
+        //craft5
         glBindVertexArray(vao[2]);
+        float current_position5 = -350 + speed * currentFrame;
+        if (current_position5 >= 10) {
+            current_position5 -= 350;
+        }
         modelTransformMatrix = glm::mat4(1.0f);
         modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, -60.0f, -50));
+        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(65.0f, 0.0f, current_position5));
         modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 craft5 = modelTransformMatrix;
         modelTransformMatrixUniformLocation =
             glGetUniformLocation(programID, "modelTransformMatrix");
         glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
             GL_FALSE, &modelTransformMatrix[0][0]);
-        if (CollisionDetection(craft3 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        if (CollisionDetection(craft5 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
             TextureID = glGetUniformLocation(programID, "ourTexture");
             glActiveTexture(GL_TEXTURE0 + slot);
             glBindTexture(GL_TEXTURE_2D, crafttexture1);
@@ -1070,12 +1152,35 @@ void paintGL(void) {
             glBindTexture(GL_TEXTURE_2D, crafttexture);
             glUniform1i(TextureID, slot);
         }
-
-
         glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
             GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
-
+        //craft_final
+        glBindVertexArray(vao[2]);
+        modelTransformMatrix = glm::mat4(1.0f);
+        modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, -60.0f, -50));
+        modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 craft6 = modelTransformMatrix;
+        modelTransformMatrixUniformLocation =
+            glGetUniformLocation(programID, "modelTransformMatrix");
+        glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+            GL_FALSE, &modelTransformMatrix[0][0]);
+        if (CollisionDetection(craft6 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+            TextureID = glGetUniformLocation(programID, "ourTexture");
+            glActiveTexture(GL_TEXTURE0 + slot);
+            glBindTexture(GL_TEXTURE_2D, crafttexture1);
+            glUniform1i(TextureID, slot);
+        }
+        else {
+            TextureID = glGetUniformLocation(programID, "ourTexture");
+            glActiveTexture(GL_TEXTURE0 + slot);
+            glBindTexture(GL_TEXTURE_2D, crafttexture);
+            glUniform1i(TextureID, slot);
+        }
+        glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+            GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
         //rock
 
         TextureID = glGetUniformLocation(programID, "ourTexture");
@@ -1083,7 +1188,7 @@ void paintGL(void) {
     glBindTexture(GL_TEXTURE_2D, rocktexture);
     glUniform1i(TextureID, slot);
     glm::mat4 modelTransformMatrix1 = glm::mat4(1.0f);
-    modelTransformMatrix1 = glm::translate(modelTransformMatrix1, glm::vec3(0.0f, 0.0f, -40.0f));
+    modelTransformMatrix1 = glm::translate(modelTransformMatrix1, glm::vec3(0.0f, 0.0f, -55.0f));
     modelTransformMatrix1 = glm::rotate(modelTransformMatrix1, glm::radians(currentFrame * 2), glm::vec3(0.0f, 1.0f, 0.0f));
     for (GLuint i = 0; i < amount; i++) {
         modelTransformMatrix = modelMatrices[i];
@@ -1109,17 +1214,54 @@ void paintGL(void) {
     glDrawElements(GL_TRIANGLES, alienobj.indices.size(),
         GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+    //satellite1
+    glBindVertexArray(vao[6]);
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-10.0f, 0.0f, 0.0f));
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    TextureID = glGetUniformLocation(programID, "ourTexture");
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, satellitetexture);
+    glUniform1i(TextureID, slot);
+    glDrawElements(GL_TRIANGLES, satelliteobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    //satellite2
+    glBindVertexArray(vao[6]);
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(10.0f, 0.0f, 0.0f));
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    TextureID = glGetUniformLocation(programID, "ourTexture");
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, satellitetexture);
+    glUniform1i(TextureID, slot);
+    glDrawElements(GL_TRIANGLES, satelliteobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     // Sets the mouse-button callback for the current window.	
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        LEFT_BUTTON = true;
+       // LEFT_BUTTON = true;
+        rotate_num += 1;
+        
     }
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-        LEFT_BUTTON = false;
-        firstMouse = true;
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+        //LEFT_BUTTON = false;
+        rotate_num -= 1;
+        //firstMouse = true;
     }
 }
 
@@ -1209,24 +1351,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             intensity -= 0.5f;
         }
     }
-
-    if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
-        x_current = x_current + x_press_num * x_delta * delta;
-        z_current = z_current + z_press_num * z_delta * delta;
-        x_press_num = -1;
-        x_delta = cos(rotate_num * r_delta) * 1.0f;
-        z_press_num = 1;
-        z_delta = sin(rotate_num * r_delta) * 1.0f;
-    }
     if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-        x_current = x_current + x_press_num * x_delta * delta;
-        z_current = z_current + z_press_num * z_delta * delta;
-        x_press_num = 1;
-        x_delta = cos(rotate_num * r_delta) * 2.0f;
-        z_press_num = -1;
-        z_delta = sin(rotate_num * r_delta) * 2.0f;
+        if (speed <=30.0f) {
+            speed += 1;
+        }
     }
-
+    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+        if (speed >= 1.0f) {
+            speed -= 1;
+        }
+    }
     //if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
       //  rotate_num -= 1;
     //}
