@@ -63,6 +63,8 @@ float lastX = 0.0f;
 float lastY = 0.0f;
 float view_y = 0.0f;
 float intensity = 1.0f;
+float p_intensity = 1.0f;
+bool point_light_switch = false;
 const int amount = 200;
 glm::mat4 modelMatrices[amount];
 float deltaTime = 0.0f;
@@ -860,7 +862,6 @@ void paintGL(void) {
     viewMatrix = glm::rotate(viewMatrix,
         glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
     viewMatrix = glm::mat4(glm::mat3(viewMatrix));
-    viewMatrix = viewMatrix * cameraMatrix;
     viewMatrixUniformLocation =
         glGetUniformLocation(Skybox_programID, "viewMatrix");
     glUniformMatrix4fv(viewMatrixUniformLocation, 1,
@@ -1351,6 +1352,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             intensity -= 0.5f;
         }
     }
+
+    if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+        if (point_light_switch == true) {
+            point_light_switch = false;
+        }
+        else {
+            point_light_switch = true;
+        }
+    }
+
     if (key == GLFW_KEY_A && action == GLFW_PRESS) {
         if (speed <=30.0f) {
             speed += 1;
