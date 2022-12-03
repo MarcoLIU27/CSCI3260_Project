@@ -69,6 +69,8 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 int speed = 10;
 bool point_light_switch = false;
+float plight_x = 0.0f;
+float plight_z = 0.0f;
 
 // struct for storing the obj file
 struct Vertex {
@@ -842,12 +844,9 @@ void paintGL(void) {
     viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 30.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, 1.0f, 0.0f));
-    viewMatrix = glm::rotate(viewMatrix,
-        glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    viewMatrix = glm::rotate(viewMatrix,
-        glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-    viewMatrix = glm::rotate(viewMatrix,
-        glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+    /*viewMatrix = glm::rotate(viewMatrix,
+        glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));*/
+    viewMatrix = glm::rotate(viewMatrix, rotate_num * r_delta, glm::vec3(0.0f, 1.0f, 0.0f));
     viewMatrix = glm::mat4(glm::mat3(viewMatrix));
     viewMatrixUniformLocation =
         glGetUniformLocation(Skybox_programID, "viewMatrix");
@@ -882,9 +881,6 @@ void paintGL(void) {
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_current + x_press_num * x_delta * delta, 0.0f, 0.0f));
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_current + z_press_num * z_delta * delta));
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, y_current + y_press_num * y_delta, 0.0f));
-    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_random, 0.0f, 0.0f));
-    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_random));
-    //modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     modelTransformMatrix = glm::rotate(modelTransformMatrix, rotate_num * r_delta, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 spacecraft = modelTransformMatrix;
     modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
@@ -896,13 +892,6 @@ void paintGL(void) {
     viewMatrix = glm::lookAt(glm::vec3(camera),
         glm::vec3(viewport),
         glm::vec3(0.0f, 1.0f, 0.0f));
-    //viewMatrix = glm::rotate(viewMatrix,
-    //    glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    //viewMatrix = glm::rotate(viewMatrix,
-    //    glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-    //viewMatrix = glm::rotate(viewMatrix,
-    //    glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-    //viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, view_y, 0.0f));
     viewMatrixUniformLocation =
         glGetUniformLocation(programID, "viewMatrix");
     glUniformMatrix4fv(viewMatrixUniformLocation, 1,
@@ -943,12 +932,13 @@ void paintGL(void) {
 
     // point light
     if (point_light_switch == true) {
-        std::cout << "Point light On!" << std::endl;
         GLint pointAmbientUniformLocation = glGetUniformLocation(programID, "pointLight.ambient");
         glm::vec3 pointAmbient(0.5f, 0.5f, 0.5f);
         glUniform4fv(pointAmbientUniformLocation, 1, &pointAmbient[0]);
 
         GLint pointPositionUniformLocation = glGetUniformLocation(programID, "pointLight.position");
+        std::cout << plight_x << std::endl;
+        std::cout << plight_z << std::endl;
         glm::vec3 pointPosition(0.0f, 20.0f, 30.0f);
         glUniform4fv(pointPositionUniformLocation, 1, &pointPosition[0]);
 
@@ -961,7 +951,6 @@ void paintGL(void) {
         glUniform3fv(pointSpecularUniformLocation, 1, &pointSpecular[0]);
     }
     else {
-        std::cout << "Point light Off!" << std::endl;
         GLint pointAmbientUniformLocation = glGetUniformLocation(programID, "pointLight.ambient");
         glUniform4fv(pointAmbientUniformLocation, 1, 0);
 
@@ -1334,7 +1323,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         }
     }
     if (key == GLFW_KEY_S && action == GLFW_PRESS) {
-        if (intensity >= 0.0f) {
+        if (intensity >= -5.0f) {
             intensity -= 0.5f;
         }
     }
@@ -1346,22 +1335,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_D && action == GLFW_PRESS) {
         if (speed >= 1.0f) {
             speed -= 1;
-        }
-    }
-    if (key == GLFW_KEY_R && action == GLFW_PRESS) {
-        if (view_y <= 8.0f) {
-            view_y += 1.0f;
-        }
-        else {
-            view_y = 8.0f;
-        }
-    }
-    if (key == GLFW_KEY_F && action == GLFW_PRESS) {
-        if (view_y >= -8.0f) {
-            view_y -= 1.0f;
-        }
-        else {
-            view_y = -8.0f;
         }
     }
     if (key == GLFW_KEY_P && action == GLFW_PRESS) {
