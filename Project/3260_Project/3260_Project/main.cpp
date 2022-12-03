@@ -837,19 +837,28 @@ void paintGL(void) {
 
     glUseProgram(programID);
 
-    // planet
-    glBindVertexArray(vao[0]);
+ 
+    // spacecraft
+    glBindVertexArray(vao[1]);
     modelTransformMatrix = glm::mat4(1.0f);
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
-    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 4), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelTransformMatrixUniformLocation =
-        glGetUniformLocation(programID, "modelTransformMatrix");
-    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
-        GL_FALSE, &modelTransformMatrix[0][0]);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.05f, 0.05f, 0.05f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, 40.0f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_current + x_press_num * x_delta * delta, 0.0f, 0.0f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_current + z_press_num * z_delta * delta));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, y_current + y_press_num * y_delta, 0.0f));
+    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_random, 0.0f, 0.0f));
+    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_random));
+    //modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, rotate_num * r_delta, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 spacecraft = modelTransformMatrix;
+    modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1, GL_FALSE, &modelTransformMatrix[0][0]);
+    
+    glm::vec4 camera = spacecraft * glm::vec4(0.0f, 35.0f, 250.0f, 1.0f);
+    glm::vec4 viewport = spacecraft * glm::vec4(0.0f, 65.0f, 0.0f, 1.0f);
 
-
-    viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 30.0f + zoom),
-        glm::vec3(0.0f, 0.0f, 0.0f),
+    viewMatrix = glm::lookAt(glm::vec3(camera),
+        glm::vec3(viewport),
         glm::vec3(0.0f, 1.0f, 0.0f));
     viewMatrix = glm::rotate(viewMatrix,
         glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -870,16 +879,10 @@ void paintGL(void) {
         GL_FALSE, &projectionMatrix[0][0]);
 
     TextureID = glGetUniformLocation(programID, "ourTexture");
-    TextureID_1 = glGetUniformLocation(programID, "ourTexture_1");
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, spacecrafttexture);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, planettexture[0]);
-    glUniform1i(TextureID, 0);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, planettexture[1]);
-    glUniform1i(TextureID_1, 1);
-
+    glUniform1i(TextureID, slot);
     // directional light
     GLint dirAmbientUniformLocation = glGetUniformLocation(programID, "dirLight.ambient");
     glm::vec3 dirAmbient(0.3f * intensity, 0.3f * intensity, 0.3f * intensity);
@@ -933,32 +936,32 @@ void paintGL(void) {
         glUniform3fv(pointSpecularUniformLocation, 1, 0);
     }
 
-    glDrawElements(GL_TRIANGLES, planetobj.indices.size(),
+    glDrawElements(GL_TRIANGLES, spacecraftobj.indices.size(),
         GL_UNSIGNED_INT, 0);
 
-    // spacecraft
-    glBindVertexArray(vao[1]);
+
+
+    // planet
+    glBindVertexArray(vao[0]);
     modelTransformMatrix = glm::mat4(1.0f);
-    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.05f, 0.05f, 0.05f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, 40.0f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_current + x_press_num * x_delta * delta, 0.0f, 0.0f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_current + z_press_num * z_delta * delta));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, y_current + y_press_num * y_delta, 0.0f));
-    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_random, 0.0f, 0.0f));
-    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_random));
-    //modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelTransformMatrix = glm::rotate(modelTransformMatrix, rotate_num * r_delta, glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 spacecraft = modelTransformMatrix;
-    modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
-    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1, GL_FALSE, &modelTransformMatrix[0][0]);
-
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -40.0f));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 4), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
     TextureID = glGetUniformLocation(programID, "ourTexture");
-    glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(GL_TEXTURE_2D, spacecrafttexture);
+    TextureID_1 = glGetUniformLocation(programID, "ourTexture_1");
 
-    glUniform1i(TextureID, slot);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, planettexture[0]);
+    glUniform1i(TextureID, 0);
 
-    glDrawElements(GL_TRIANGLES, spacecraftobj.indices.size(),
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, planettexture[1]);
+    glUniform1i(TextureID_1, 1);
+
+    glDrawElements(GL_TRIANGLES, planetobj.indices.size(),
         GL_UNSIGNED_INT, 0);
 
     //craft1
