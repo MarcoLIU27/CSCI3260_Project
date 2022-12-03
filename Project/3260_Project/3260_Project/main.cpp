@@ -63,13 +63,13 @@ float lastX = 0.0f;
 float lastY = 0.0f;
 float view_y = 0.0f;
 float intensity = 1.0f;
-float p_intensity = 1.0f;
-bool point_light_switch = false;
 const int amount = 200;
 glm::mat4 modelMatrices[amount];
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 int speed = 10;
+bool point_light_switch = false;
+
 // struct for storing the obj file
 struct Vertex {
     glm::vec3 position;
@@ -139,17 +139,6 @@ bool CollisionDetection(glm::vec4 vectorA, glm::vec4 vectorB, int dis) {
         return true;
     else
         return false;
-}
-
-int* twoRandomNum()
-{
-    //generate two random int number between -2 and 2.
-    int num[2];
-    srand(time(NULL));
-    num[0] = rand() % 9 - 4;
-    srand(time(NULL) + 1000);
-    num[1] = rand() % 9 - 4;
-    return num;
 }
 
 Model loadOBJ(const char* objPath)
@@ -542,10 +531,10 @@ void sendDataToOpenGL() {
     );
 
     rocktexture = loadTexture("resources/texture/rockTexture.bmp");
-    
 
-        //skybox
-        GLfloat skyboxVertices[] = {
+
+    //skybox
+    GLfloat skyboxVertices[] = {
         // Positions          
         -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,
@@ -840,19 +829,17 @@ void paintGL(void) {
 
 
     //skybox
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDepthFunc(GL_LEQUAL);
     glUseProgram(Skybox_programID);
 
     modelTransformMatrix = glm::mat4(1.0f);
-    ////Skb_modelTransformMatrix = glm::scale(Skb_modelTransformMatrix, glm::vec3(5.0f, 5.0f, 5.0f));
     modelTransformMatrixUniformLocation =
         glGetUniformLocation(Skybox_programID, "modelTransformMatrix");
     glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
         GL_FALSE, &modelTransformMatrix[0][0]);
 
     //remove any translation component of the view matrix
-    viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 30.0f + zoom),
+    viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 30.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, 1.0f, 0.0f));
     viewMatrix = glm::rotate(viewMatrix,
@@ -886,29 +873,36 @@ void paintGL(void) {
 
     glUseProgram(programID);
 
- 
+
     // spacecraft
     glBindVertexArray(vao[1]);
     modelTransformMatrix = glm::mat4(1.0f);
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -55.0f));
-    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 4), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(1.5f, 1.5f, 1.5f));
-    modelTransformMatrixUniformLocation =
-        glGetUniformLocation(programID, "modelTransformMatrix");
-    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
-        GL_FALSE, &modelTransformMatrix[0][0]);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.05f, 0.05f, 0.05f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, 40.0f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_current + x_press_num * x_delta * delta, 0.0f, 0.0f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_current + z_press_num * z_delta * delta));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, y_current + y_press_num * y_delta, 0.0f));
+    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_random, 0.0f, 0.0f));
+    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_random));
+    //modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, rotate_num * r_delta, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 spacecraft = modelTransformMatrix;
+    modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1, GL_FALSE, &modelTransformMatrix[0][0]);
 
+    glm::vec4 camera = spacecraft * glm::vec4(0.0f, 100.0f, 250.0f, 1.0f);
+    glm::vec4 viewport = spacecraft * glm::vec4(0.0f, 65.0f, 0.0f, 1.0f);
 
     viewMatrix = glm::lookAt(glm::vec3(camera),
         glm::vec3(viewport),
         glm::vec3(0.0f, 1.0f, 0.0f));
-    viewMatrix = glm::rotate(viewMatrix,
-        glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    viewMatrix = glm::rotate(viewMatrix,
-        glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-    viewMatrix = glm::rotate(viewMatrix,
-        glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-    viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, view_y, 0.0f));
+    //viewMatrix = glm::rotate(viewMatrix,
+    //    glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    //viewMatrix = glm::rotate(viewMatrix,
+    //    glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+    //viewMatrix = glm::rotate(viewMatrix,
+    //    glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+    //viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, view_y, 0.0f));
     viewMatrixUniformLocation =
         glGetUniformLocation(programID, "viewMatrix");
     glUniformMatrix4fv(viewMatrixUniformLocation, 1,
@@ -925,6 +919,7 @@ void paintGL(void) {
     glBindTexture(GL_TEXTURE_2D, spacecrafttexture);
 
     glUniform1i(TextureID, slot);
+
     // directional light
     GLint dirAmbientUniformLocation = glGetUniformLocation(programID, "dirLight.ambient");
     glm::vec3 dirAmbient(0.3f * intensity, 0.3f * intensity, 0.3f * intensity);
@@ -943,46 +938,58 @@ void paintGL(void) {
     glUniform3fv(dirSpecularUniformLocation, 1, &dirSpecular[0]);
 
     GLint eyePositionUniformLocation = glGetUniformLocation(programID, "eyePositionWorld");
-    glm::vec3 eyePosition(0.0f, 0.0f, 30.0f + zoom);
+    glm::vec3 eyePosition(0.0f, 0.0f, 30.0f);
     glUniform3fv(eyePositionUniformLocation, 1, &eyePosition[0]);
 
-    //// point light
-    //GLint pointAmbientUniformLocation = glGetUniformLocation(programID, "pointLight.ambient");
-    //glm::vec3 pointAmbient(1.0f, 1.0f, 1.0f);
-    //glUniform4fv(pointAmbientUniformLocation, 1, &pointAmbient[0]);
+    // point light
+    if (point_light_switch == true) {
+        std::cout << "Point light On!" << std::endl;
+        GLint pointAmbientUniformLocation = glGetUniformLocation(programID, "pointLight.ambient");
+        glm::vec3 pointAmbient(0.5f, 0.5f, 0.5f);
+        glUniform4fv(pointAmbientUniformLocation, 1, &pointAmbient[0]);
 
-    //GLint pointPositionUniformLocation = glGetUniformLocation(programID, "pointLight.position");
-    //glm::vec3 pointPosition(0.0f, 5.0f, 0.0f);
-    //glUniform4fv(pointPositionUniformLocation, 1, &pointPosition[0]);
+        GLint pointPositionUniformLocation = glGetUniformLocation(programID, "pointLight.position");
+        glm::vec3 pointPosition(0.0f, 20.0f, 30.0f);
+        glUniform4fv(pointPositionUniformLocation, 1, &pointPosition[0]);
 
-    //GLint pointDiffuseUniformLocation = glGetUniformLocation(programID, "pointLight.diffuse");
-    //glm::vec3 pointDiffuse(0.8f, 0.8f, 0.8f);
-    //glUniform3fv(pointDiffuseUniformLocation, 1, &pointDiffuse[0]);
+        GLint pointDiffuseUniformLocation = glGetUniformLocation(programID, "pointLight.diffuse");
+        glm::vec3 pointDiffuse(0.8f, 0.8f, 0.8f);
+        glUniform3fv(pointDiffuseUniformLocation, 1, &pointDiffuse[0]);
 
-    //GLint pointSpecularUniformLocation = glGetUniformLocation(programID, "pointLight.specular");
-    //glm::vec3 pointSpecular(0.8f, 0.8f, 0.8f);
-    //glUniform3fv(pointSpecularUniformLocation, 1, &pointSpecular[0]);
-    glDrawElements(GL_TRIANGLES, planetobj.indices.size(),
+        GLint pointSpecularUniformLocation = glGetUniformLocation(programID, "pointLight.specular");
+        glm::vec3 pointSpecular(0.8f, 0.8f, 0.8f);
+        glUniform3fv(pointSpecularUniformLocation, 1, &pointSpecular[0]);
+    }
+    else {
+        std::cout << "Point light Off!" << std::endl;
+        GLint pointAmbientUniformLocation = glGetUniformLocation(programID, "pointLight.ambient");
+        glUniform4fv(pointAmbientUniformLocation, 1, 0);
+
+        GLint pointPositionUniformLocation = glGetUniformLocation(programID, "pointLight.position");
+        glUniform4fv(pointPositionUniformLocation, 1, 0);
+
+        GLint pointDiffuseUniformLocation = glGetUniformLocation(programID, "pointLight.diffuse");
+        glUniform3fv(pointDiffuseUniformLocation, 1, 0);
+
+        GLint pointSpecularUniformLocation = glGetUniformLocation(programID, "pointLight.specular");
+        glUniform3fv(pointSpecularUniformLocation, 1, 0);
+    }
+    glDrawElements(GL_TRIANGLES, spacecraftobj.indices.size(),
         GL_UNSIGNED_INT, 0);
-
-
 
     // planet
     glBindVertexArray(vao[0]);
     modelTransformMatrix = glm::mat4(1.0f);
-    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.05f, 0.05f, 0.05f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, 40.0f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_current + x_press_num * x_delta * delta, 0.0f, 0.0f));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_current + z_press_num * z_delta * delta));
-    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, y_current + y_press_num * y_delta, 0.0f));
-    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(x_random, 0.0f, 0.0f));
-    //modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, z_random));
-    //modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelTransformMatrix = glm::rotate(modelTransformMatrix, rotate_num * r_delta, glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 spacecraft = modelTransformMatrix;
-    cameraMatrix= modelTransformMatrix;
-    modelTransformMatrixUniformLocation = glGetUniformLocation(programID, "modelTransformMatrix");
-    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1, GL_FALSE, &modelTransformMatrix[0][0]);
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, 0.0f, -55.0f));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 4), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(1.5f, 1.5f, 1.5f));
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+
+    TextureID = glGetUniformLocation(programID, "ourTexture");
+    TextureID_1 = glGetUniformLocation(programID, "ourTexture_1");
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, planettexture[0]);
@@ -994,6 +1001,7 @@ void paintGL(void) {
 
     glDrawElements(GL_TRIANGLES, planetobj.indices.size(),
         GL_UNSIGNED_INT, 0);
+
 
     //craft1
     glBindVertexArray(vao[2]);
@@ -1010,7 +1018,7 @@ void paintGL(void) {
     if (currentFrame >= 90) {
         currentFrame = glfwGetTime() - 90;
     }
-   
+
     modelTransformMatrix = glm::mat4(1.0f);
     modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-40.0f, 0.0f, current_position1));
@@ -1036,154 +1044,154 @@ void paintGL(void) {
         GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
     //craft2
-        glBindVertexArray(vao[2]);
-        float current_position2 = -450 + speed * currentFrame;
-        if (current_position2 >= 10) {
-            current_position2 -= 450;
-        }
-        modelTransformMatrix = glm::mat4(1.0f);
-        modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(50.0f, 0.0f, current_position2));
-        modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 craft2 = modelTransformMatrix;
-        modelTransformMatrixUniformLocation =
-            glGetUniformLocation(programID, "modelTransformMatrix");
-        glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
-            GL_FALSE, &modelTransformMatrix[0][0]);
-        if (CollisionDetection(craft2 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture1);
-            glUniform1i(TextureID, slot);
-        }
-        else {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture);
-            glUniform1i(TextureID, slot);
-        }
-        glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
-            GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-        //craft3
-        glBindVertexArray(vao[2]);
-        float current_position3= -400 + speed* currentFrame;
-        if (current_position3 >= 10) {
-            current_position3 -= 400;
-        }
-        modelTransformMatrix = glm::mat4(1.0f);
-        modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(70.0f, 0.0f, current_position3));
-        modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 craft3 = modelTransformMatrix;
-        modelTransformMatrixUniformLocation =
-            glGetUniformLocation(programID, "modelTransformMatrix");
-        glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
-            GL_FALSE, &modelTransformMatrix[0][0]);
-        if (CollisionDetection(craft3 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture1);
-            glUniform1i(TextureID, slot);
-        }
-        else {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture);
-            glUniform1i(TextureID, slot);
-        }
-        glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
-            GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-        //craft4
-        glBindVertexArray(vao[2]);
-        float current_position4 = -350 + speed* currentFrame;
-        if (current_position4 >= 10) {
-            current_position4 -= 350;
-        }
-        modelTransformMatrix = glm::mat4(1.0f);
-        modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-80.0f, 0.0f, current_position4));
-        modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 craft4 = modelTransformMatrix;
-        modelTransformMatrixUniformLocation =
-            glGetUniformLocation(programID, "modelTransformMatrix");
-        glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
-            GL_FALSE, &modelTransformMatrix[0][0]);
-        if (CollisionDetection(craft4 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture1);
-            glUniform1i(TextureID, slot);
-        }
-        else {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture);
-            glUniform1i(TextureID, slot);
-        }
-        glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
-            GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-        //craft5
-        glBindVertexArray(vao[2]);
-        float current_position5 = -350 + speed * currentFrame;
-        if (current_position5 >= 10) {
-            current_position5 -= 350;
-        }
-        modelTransformMatrix = glm::mat4(1.0f);
-        modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(65.0f, 0.0f, current_position5));
-        modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 craft5 = modelTransformMatrix;
-        modelTransformMatrixUniformLocation =
-            glGetUniformLocation(programID, "modelTransformMatrix");
-        glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
-            GL_FALSE, &modelTransformMatrix[0][0]);
-        if (CollisionDetection(craft5 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture1);
-            glUniform1i(TextureID, slot);
-        }
-        else {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture);
-            glUniform1i(TextureID, slot);
-        }
-        glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
-            GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-        //craft_final
-        glBindVertexArray(vao[2]);
-        modelTransformMatrix = glm::mat4(1.0f);
-        modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
-        modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, -60.0f, -50));
-        modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 craft6 = modelTransformMatrix;
-        modelTransformMatrixUniformLocation =
-            glGetUniformLocation(programID, "modelTransformMatrix");
-        glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
-            GL_FALSE, &modelTransformMatrix[0][0]);
-        if (CollisionDetection(craft6 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture1);
-            glUniform1i(TextureID, slot);
-        }
-        else {
-            TextureID = glGetUniformLocation(programID, "ourTexture");
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, crafttexture);
-            glUniform1i(TextureID, slot);
-        }
-        glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
-            GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-        //rock
-
+    glBindVertexArray(vao[2]);
+    float current_position2 = -450 + speed * currentFrame;
+    if (current_position2 >= 10) {
+        current_position2 -= 450;
+    }
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(50.0f, 0.0f, current_position2));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 craft2 = modelTransformMatrix;
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    if (CollisionDetection(craft2 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
         TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    //craft3
+    glBindVertexArray(vao[2]);
+    float current_position3 = -400 + speed * currentFrame;
+    if (current_position3 >= 10) {
+        current_position3 -= 400;
+    }
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(70.0f, 0.0f, current_position3));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 craft3 = modelTransformMatrix;
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    if (CollisionDetection(craft3 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    //craft4
+    glBindVertexArray(vao[2]);
+    float current_position4 = -350 + speed * currentFrame;
+    if (current_position4 >= 10) {
+        current_position4 -= 350;
+    }
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(-80.0f, 0.0f, current_position4));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 craft4 = modelTransformMatrix;
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    if (CollisionDetection(craft4 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    //craft5
+    glBindVertexArray(vao[2]);
+    float current_position5 = -350 + speed * currentFrame;
+    if (current_position5 >= 10) {
+        current_position5 -= 350;
+    }
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(65.0f, 0.0f, current_position5));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 craft5 = modelTransformMatrix;
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    if (CollisionDetection(craft5 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    //craft_final
+    glBindVertexArray(vao[2]);
+    modelTransformMatrix = glm::mat4(1.0f);
+    modelTransformMatrix = glm::scale(modelTransformMatrix, glm::vec3(0.25f, 0.25f, 0.25f));
+    modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.0f, -60.0f, -50));
+    modelTransformMatrix = glm::rotate(modelTransformMatrix, glm::radians(currentFrame * 16), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 craft6 = modelTransformMatrix;
+    modelTransformMatrixUniformLocation =
+        glGetUniformLocation(programID, "modelTransformMatrix");
+    glUniformMatrix4fv(modelTransformMatrixUniformLocation, 1,
+        GL_FALSE, &modelTransformMatrix[0][0]);
+    if (CollisionDetection(craft6 * glm::vec4(0, 0, 0, 1), spacecraft * glm::vec4(0, 0, 0, 1), 5)) {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture1);
+        glUniform1i(TextureID, slot);
+    }
+    else {
+        TextureID = glGetUniformLocation(programID, "ourTexture");
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, crafttexture);
+        glUniform1i(TextureID, slot);
+    }
+    glDrawElements(GL_TRIANGLES, craftobj.indices.size(),
+        GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    //rock
+
+    TextureID = glGetUniformLocation(programID, "ourTexture");
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, rocktexture);
     glUniform1i(TextureID, slot);
@@ -1198,7 +1206,7 @@ void paintGL(void) {
         glBindVertexArray(vao[3]);
         glDrawElements(GL_TRIANGLES, rockobj.indices.size(), GL_UNSIGNED_INT, 0);
     }
-        //alien
+    //alien
     glBindVertexArray(vao[5]);
     modelTransformMatrix = glm::mat4(1.0f);
     modelTransformMatrix = glm::translate(modelTransformMatrix, glm::vec3(0.25f, -11.0f, -10.0f));
@@ -1254,9 +1262,9 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     // Sets the mouse-button callback for the current window.	
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-       // LEFT_BUTTON = true;
+        // LEFT_BUTTON = true;
         rotate_num += 1;
-        
+
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
         //LEFT_BUTTON = false;
@@ -1307,22 +1315,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // Sets the Keyboard callback for the current window.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    if (key == GLFW_KEY_L && action == GLFW_PRESS) {
-        int* ran_num;
-        float old_x_random = x_random;
-        float old_z_random = z_random;
-        x_delta = 0.25f;
-        z_delta = 0.25f;
-        do {
-            ran_num = twoRandomNum(); // between -4 and 4
-            int ran_num_x = *ran_num;
-            int ran_num_z = *(ran_num + 1);
-            x_random = ran_num_x * x_delta;
-            z_random = ran_num_z * z_delta;
-
-        } while (x_random == old_x_random && z_random == old_z_random);
-    };
-
     if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
         z_press_num -= 25;
     }
@@ -1335,12 +1327,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
         x_press_num += 25;
     }
-    if (key == GLFW_KEY_X && action == GLFW_PRESS) {
-        rotate_num += 1;
-    }
-    if (key == GLFW_KEY_Z && action == GLFW_PRESS) {
-        rotate_num -= 1;
-    }
+
     if (key == GLFW_KEY_W && action == GLFW_PRESS) {
         if (intensity <= 5.0f) {
             intensity += 0.5f;
@@ -1351,18 +1338,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             intensity -= 0.5f;
         }
     }
-
-    if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-        if (point_light_switch == true) {
-            point_light_switch = false;
-        }
-        else {
-            point_light_switch = true;
-        }
-    }
-
     if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-        if (speed <=30.0f) {
+        if (speed <= 30.0f) {
             speed += 1;
         }
     }
@@ -1371,9 +1348,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             speed -= 1;
         }
     }
-    //if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
-      //  rotate_num -= 1;
-    //}
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
         if (view_y <= 8.0f) {
             view_y += 1.0f;
@@ -1388,6 +1362,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         }
         else {
             view_y = -8.0f;
+        }
+    }
+    if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+        if (point_light_switch == true) {
+            point_light_switch = false;
+        }
+        else {
+            point_light_switch = true;
         }
     }
 }
